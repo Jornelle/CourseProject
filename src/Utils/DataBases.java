@@ -55,14 +55,10 @@ public class DataBases {
         return users;
     }
 
-    public void deleteUser(int id){
+    public void deleteUser(int id) throws SQLException {
         String sql = "deleteUser " + id;
-        try {
             Statement statement = connection.createStatement();
             statement.executeUpdate(sql);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
     }
 
     public void updUser(User user) throws SQLException {
@@ -138,9 +134,9 @@ public class DataBases {
         return ids;
     }
 
-    public ObservableList<Integer> getBookPass(){
+    public ObservableList<Integer> getBookPass(String bookName){
         ObservableList<Integer> ids = FXCollections.observableArrayList();
-        String sql = "getBooksId";
+        String sql = "getBooksId '" + bookName + "'";
         try {
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
@@ -228,4 +224,23 @@ public class DataBases {
         return promisers;
     }
 
+    public Book searchBook(int id){
+        String sql = "searchBook " + id;
+        Book book = new Book();
+        try {
+
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql);
+            while (resultSet.next()){
+                book.setAuthor(resultSet.getString("Author"));
+                book.setId(id);
+                book.setTitle(resultSet.getString("Title"));
+                book.setCount(resultSet.getInt("Count"));
+                book.setYear(resultSet.getInt("Year"));
+            }
+        } catch (Exception throwables) {
+            throwables.printStackTrace();
+        }
+        return book;
+    }
 }

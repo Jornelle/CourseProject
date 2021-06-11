@@ -97,7 +97,7 @@ public class Book {
     public String toString() {
         String info = "Номер книги: " + id;
         info += "\nАвтор: " + author;
-        info += "\nНазвание: " + title;
+        info += "\nНазвание: \"" + title+ "\"";
         info += "\nГод издания: " + year;
         info += "\nКоличество: " + count;
         return info;

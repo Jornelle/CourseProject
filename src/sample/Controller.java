@@ -10,6 +10,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -83,6 +84,10 @@ public class Controller implements Initializable {
     Label lblCondition;
     @FXML
     Button btnSearch;
+    @FXML
+    TextField txfBookTitle;
+    @FXML
+    TextArea txaBookInfo;
 
 
     private DataBases dataBases;
@@ -142,6 +147,44 @@ public class Controller implements Initializable {
                 if(t1 != null){
                     lblPromiseId.setText(String.valueOf(t1.getId()));
                     btnDelete.setDisable(false);
+                }
+            }
+        });
+        cmbID.setOnAction(event -> {
+            try {
+                txaBookInfo.setText(String.valueOf(dataBases.searchBook(Integer.parseInt(String.valueOf(cmbID.getValue())))));
+            }
+            catch (NullPointerException ex){
+
+            }
+        });
+
+        tpItems.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>() {
+            @Override
+            public void changed(ObservableValue<? extends Tab> observableValue, Tab tab, Tab t1) {
+                btnUpdate.setDisable(true);
+                btnDelete.setDisable(true);
+                switch (tpItems.getSelectionModel().getSelectedItem().getId()){
+                    case "tabUser", "tabBook" -> {
+                        btnAdd.setText("Добавить");
+                        btnDelete.setText("Удалить");
+                        btnUpdate.setText("Изменить");
+                        if(!lblBookId.getText().equals("")){
+                            btnUpdate.setDisable(false);
+                            btnDelete.setDisable(false);
+                        }
+                        if(!txfPassport.getText().equals("")){
+                            btnUpdate.setDisable(false);
+                            btnDelete.setDisable(false);
+                        }
+                    }
+                    case "tabReader" -> {
+                        btnAdd.setText("Добавить");
+                        btnDelete.setText("Вернуть");
+                        if(!lblReaderId.getText().equals("")){
+                            btnUpdate.setDisable(false);
+                        }
+                    }
                 }
             }
         });
@@ -221,8 +264,8 @@ public class Controller implements Initializable {
                 try {
                     reader.setUserPass(cmbPassport.getValue());
                 } catch (Exception e) {
-                    lblError.setText(e.getMessage());
                     e.printStackTrace();
+                    return;
                 }
                 try {
                     dataBases.addReader(reader);
@@ -308,6 +351,7 @@ public class Controller implements Initializable {
     }
 
     public void btnDeleteClick(ActionEvent actionEvent) {
+        lblError.setText("");
         switch (tpItems.getSelectionModel().getSelectedItem().getId()){
             case "tabUser" -> {
                 int passport;
@@ -319,13 +363,21 @@ public class Controller implements Initializable {
                     txfPassport.setText("");
                     return;
                 }
-                dataBases.deleteUser(passport);
+
+                try {
+                    dataBases.deleteUser(passport);
+                } catch (SQLException throwables) {
+                    lblError.setText(throwables.getMessage());
+                }
             }
             case "tabBook" -> {
                 dataBases.delBook(Integer.parseInt(lblBookId.getText()));
             }
             case "tabReader" -> {
-                lblError.setText(String.valueOf(dataBases.delReader(Integer.parseInt(lblReaderId.getText()), cmbReaderCondition.getValue())));
+                int sum = dataBases.delReader(Integer.parseInt(lblReaderId.getText()), cmbReaderCondition.getValue());
+                if(sum != 0) {
+                    lblError.setText("Читатель должен " + Math.abs(sum) + " руб.");
+                }
             }
             case "tabPromiser" -> {
                 dataBases.delPromiser(Integer.parseInt(lblPromiseId.getText()));
@@ -385,8 +437,6 @@ public class Controller implements Initializable {
         condition.add("Плохое");
         cmbReaderCondition.setItems(condition);
         cmbPassport.setItems(dataBases.getUsersPass());
-        cmbID.setItems(dataBases.getBookPass());
-        cmbReaderCondition.setValue(condition.get(0));
     }
 
     private void clearUser(){
@@ -424,6 +474,15 @@ public class Controller implements Initializable {
 
     @FXML
     public void btnSearchClick(ActionEvent actionEvent){
-
+        lblError.setText("");
+        var ids = dataBases.getBookPass(txfBookTitle.getText());
+        if(ids.size() < 1){
+            lblError.setText("Такой книги не найдено");
+            return;
+        }
+        cmbID.setItems(ids);
+        cmbID.setValue(ids.get(0));
+        cmbID.setDisable(false);
+        txaBookInfo.setText(String.valueOf(dataBases.searchBook(Integer.parseInt(String.valueOf(cmbID.getValue())))));
     }
 }
